@@ -29,9 +29,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-//#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
-//#include <i2c/smbus.h>
 
 /* If you declare any globals in php_i2c.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(i2c)
@@ -78,22 +76,25 @@ PHP_FUNCTION(confirm_i2c_compiled)
    follow this convention for the convenience of others editing your code.
 */
 
-/* {{{ proto long i2cset(int value)
+/* {{{ proto long i2cset(int i2cbus, int chip_address, int data_address, int value)
    Send a value to the chip.  */
 PHP_FUNCTION(i2cset)
 {
+    long i2cbus;
+    long chip_address;
+    long data_address;
     long value;
-
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &value) != SUCCESS ) {
-            return;
-    }
-
-    int fd = open("/dev/i2c-1", O_RDWR);    
+    char filename[20];
     
-    //unsigned long funcs;
-    //int check_funcs = ioctl(fd,I2C_FUNCS,&funcs); 
-    int set_slave = ioctl(fd,I2C_SLAVE,0x20);
-    int res = i2c_smbus_write_word_data(fd,0x12,value); 
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "llll", &i2cbus, &chip_address, &data_address, &value) != SUCCESS ) {
+        return;
+    }
+       
+    sprintf(filename, "/dev/i2c-%d", i2cbus);		
+    int fd = open(filename, O_RDWR);    
+        
+    int set_slave = ioctl(fd,I2C_SLAVE,chip_address);
+    int res = i2c_smbus_write_word_data(fd,data_address,value); 
     close(fd);        
     RETURN_LONG(res);
 }
