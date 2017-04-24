@@ -1,0 +1,13 @@
+// $Id$
+// vim:ft=javascript
+
+// If your extension references something external, use ARG_WITH
+// ARG_WITH("i2c", "for i2c support", "no");
+
+// Otherwise, use ARG_ENABLE
+// ARG_ENABLE("i2c", "enable i2c support", "no");
+
+if (PHP_I2C != "no") {
+	EXTENSION("i2c", "i2c.c", PHP_EXTNAME_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
+}
+
