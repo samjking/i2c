@@ -26,6 +26,12 @@
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "php_i2c.h"
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+//#include <linux/i2c.h>
+#include <linux/i2c-dev.h>
+//#include <i2c/smbus.h>
 
 /* If you declare any globals in php_i2c.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(i2c)
@@ -72,6 +78,26 @@ PHP_FUNCTION(confirm_i2c_compiled)
    follow this convention for the convenience of others editing your code.
 */
 
+/* {{{ proto long i2cset(int value)
+   Send a value to the chip.  */
+PHP_FUNCTION(i2cset)
+{
+    long value;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &value) != SUCCESS ) {
+            return;
+    }
+
+    int fd = open("/dev/i2c-1", O_RDWR);    
+    
+    //unsigned long funcs;
+    //int check_funcs = ioctl(fd,I2C_FUNCS,&funcs); 
+    int set_slave = ioctl(fd,I2C_SLAVE,0x20);
+    int res = i2c_smbus_write_word_data(fd,0x12,value); 
+    close(fd);        
+    RETURN_LONG(res);
+}
+/* }}} */
 
 /* {{{ php_i2c_init_globals
  */
@@ -147,7 +173,8 @@ PHP_MINFO_FUNCTION(i2c)
  */
 const zend_function_entry i2c_functions[] = {
 	PHP_FE(confirm_i2c_compiled,	NULL)		/* For testing, remove later. */
-	PHP_FE_END	/* Must be the last line in i2c_functions[] */
+	PHP_FE(i2cset, NULL)   
+        PHP_FE_END	/* Must be the last line in i2c_functions[] */
 };
 /* }}} */
 
