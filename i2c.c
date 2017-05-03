@@ -48,33 +48,28 @@ PHP_INI_END()
 */
 /* }}} */
 
-/* Remove the following function when you have successfully modified config.m4
-   so that your module can be compiled into PHP, it exists only for testing
-   purposes. */
-
-/* Every user-visible function in PHP should document itself in the source */
-/* {{{ proto string confirm_i2c_compiled(string arg)
-   Return a string to confirm that the module is compiled in */
-PHP_FUNCTION(confirm_i2c_compiled)
+/* {{{ proto long i2cget(int i2cbus, int chip_address, int data_address)
+   Get a value from the chip.  */
+PHP_FUNCTION(i2cget)
 {
-	char *arg = NULL;
-	size_t arg_len, len;
-	zend_string *strg;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &arg, &arg_len) == FAILURE) {
-		return;
-	}
-
-	strg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "i2c", arg);
-
-	RETURN_STR(strg);
+    long i2cbus;
+    long chip_address;
+    long data_address;
+    char filename[20];
+    
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lll", &i2cbus, &chip_address, &data_address) != SUCCESS ) {
+        return;
+    }
+    
+    sprintf(filename, "/dev/i2c-%d", i2cbus);		
+    int fd = open(filename, O_RDWR);
+    
+    int set_slave = ioctl(fd,I2C_SLAVE,chip_address);
+    int res = i2c_smbus_read_word_data(fd, data_address);
+    close(fd);        
+    RETURN_LONG(res);
 }
 /* }}} */
-/* The previous line is meant for vim and emacs, so it can correctly fold and
-   unfold functions in source code. See the corresponding marks just before
-   function definition, where the functions purpose is also documented. Please
-   follow this convention for the convenience of others editing your code.
-*/
 
 /* {{{ proto long i2cset(int i2cbus, int chip_address, int data_address, int value)
    Send a value to the chip.  */
@@ -172,8 +167,8 @@ PHP_MINFO_FUNCTION(i2c)
  *
  * Every user visible function must have an entry in i2c_functions[].
  */
-const zend_function_entry i2c_functions[] = {
-	PHP_FE(confirm_i2c_compiled,	NULL)		/* For testing, remove later. */
+const zend_function_entry i2c_functions[] = {	
+        PHP_FE(i2cget, NULL) 
 	PHP_FE(i2cset, NULL)   
         PHP_FE_END	/* Must be the last line in i2c_functions[] */
 };
